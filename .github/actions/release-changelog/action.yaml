@@ -10,7 +10,7 @@ inputs:
     required: true
 runs:
   using: 'docker'
-  image: 'ghcr.io/greatg0ose/release-automator:sha-94d43d2'
+  image: 'docker://ghcr.io/greatg0ose/release-automator:sha-94d43d2'
   args:
     - "-version"
     - ${{ inputs.version }}
