@@ -1,0 +1,60 @@
+name: Validate Pull-Request
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+jobs:
+  title:
+    name: PR title has a ticket reference
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify PR starts with ticket
+        shell: bash
+        run: |
+          prefix="${{ vars.JIRA_ALIAS }}"
+          input="${{ github.event.pull_request.title }}"
+
+          if [[ $input =~ .*${prefix}.* ]]
+          then
+          	echo "Valid"
+          else
+          	echo "Not a valid value:"
+          	echo "${input}"
+            exit 1
+          fi
+  
+  branch:
+    name: Branch has a valid name
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify branch name
+        shell: bash
+        run: |
+          validate_branch() {
+            local branch_name=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+
+            local valid_names=("main")
+            for name in "${valid_names[@]}"; do
+              if [[ $name == "$branch_name" ]]; then
+                return 0
+              fi
+            done
+
+            local pattern="${{ vars.JIRA_ALIAS }}-[0-9]+[/]."
+            if [[ $branch_name =~ $pattern ]]; then
+              return 0
+            fi
+
+            echo "Branch name $branch_name is not allowed."
+            echo "Make sure, branch name follows pattern '${{ vars.JIRA_ALIAS }}-{TICKET_NUMBER}/{TICKET_TITLE}'"
+            return 1
+          }
+
+          validate_branch || exit 1
+          echo "Branch name is valid"
