@@ -7,26 +7,42 @@ on:
         description: Short name of the JIRA project
         required: true
         type: string
+      allow_version_bumps:
+        description: Allows PRs created automatically to bump dependency versions.
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   title:
-    name: PR title has a ticket reference
+    name: PR title has a ticket reference or is a version bump
     runs-on: ubuntu-latest
     steps:
-      - name: Verify PR starts with ticket
+      - name: Verify PR starts with ticket or version bump indicator
         shell: bash
         run: |
           prefix="${{ inputs.jira_alias }}"
           input="${{ github.event.pull_request.title }}"
+          bump_regex="^npm\(deps-dev\): bump .*|^npm\(deps\): bump .*|^Bump .*|^maven \(deps\): bump .*|^maven \(deps-dev\): bump .*"
 
           if [[ $input =~ .*${prefix}.* ]]
           then
           	echo "Valid"
-          else
-          	echo "Not a valid value:"
-          	echo "${input}"
-            exit 1
+            exit 0
           fi
+
+          if [[ inputs.allow_version_bumps ]]
+          then
+          	if [[ $input =~ $bump_regex ]]
+            then
+              echo "Valid"
+              exit 0
+            fi
+          fi
+
+          echo "Not a valid value:"
+          echo "${input}"
+          exit 1
   
   branch:
     name: Branch has a valid name
