@@ -7,6 +7,11 @@ on:
         description: Short name of the JIRA project
         required: true
         type: string
+      allow_version_bumps:
+        description: Allows PRs created automatically to bump dependency versions.
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   title:
@@ -18,15 +23,22 @@ jobs:
         run: |
           prefix="${{ inputs.jira_alias }}"
           input="${{ github.event.pull_request.title }}"
+          bump_regex="^npm\(deps-dev\): bump .*|^npm\(deps\): bump .*|^Bump .*|^maven \(deps\): bump .*|^maven \(deps-dev\): bump .*"
 
           if [[ $input =~ .*${prefix}.* ]]
           then
           	echo "Valid"
-          else
-          	echo "Not a valid value:"
-          	echo "${input}"
-            exit 1
+            exit 0
           fi
+
+          if [[ inputs.allow_version_bumps && $input =~ $bump_regex ]]
+          then
+            echo "Valid"
+            exit 0
+          fi
+
+          echo "Not a valid value: ${input}"
+          exit 1
   
   branch:
     name: Branch has a valid name
@@ -39,15 +51,20 @@ jobs:
           validate_branch() {
             local branch_name=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
 
-            local valid_names=("main", "master", "develop")
+            local valid_names=("main" "master" "develop")
             for name in "${valid_names[@]}"; do
               if [[ $name == "$branch_name" ]]; then
                 return 0
               fi
             done
 
-            local pattern="${{ inputs.jira_alias }}-[0-9]+[/]."
+            local pattern="${{ inputs.jira_alias }}-[0-9]+[/].*"
             if [[ $branch_name =~ $pattern ]]; then
+              return 0
+            fi
+          
+            if [[ "$allow_version_bumps" = true && $branch_name =~ ^dependabot\/.* ]]
+            then
               return 0
             fi
 
