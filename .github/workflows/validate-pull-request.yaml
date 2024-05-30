@@ -15,7 +15,7 @@ on:
 
 jobs:
   title:
-    name: PR title has a ticket reference or is a version bump
+    name: PR title is valid
     runs-on: ubuntu-latest
     steps:
       - name: Verify PR starts with ticket or version bump indicator
