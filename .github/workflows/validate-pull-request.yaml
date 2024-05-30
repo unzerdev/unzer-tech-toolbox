@@ -33,7 +33,7 @@ jobs:
             exit 0
           fi
 
-          if [[ ${ allow_version_bumps } && $input =~ $bump_regex ]]
+          if [[ $allow_version_bumps && $input =~ $bump_regex ]]
           then
             echo "Valid"
             exit 0
@@ -65,7 +65,7 @@ jobs:
               return 0
             fi
           
-            if [[ ${ allow_version_bumps } && $branch_name =~ ^dependabot\/.* ]]
+            if [[ $allow_version_bumps && $branch_name =~ ^dependabot\/.* ]]
             then
               return 0
             fi
