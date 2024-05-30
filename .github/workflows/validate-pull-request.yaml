@@ -7,11 +7,6 @@ on:
         description: Short name of the JIRA project
         required: true
         type: string
-      allow_version_bumps:
-        description: Allows PRs created automatically to bump dependency versions.
-        required: false
-        type: boolean
-        default: false
 
 jobs:
   title:
@@ -22,9 +17,7 @@ jobs:
         shell: bash
         run: |
           prefix="${{ inputs.jira_alias }}"
-          allow_version_bumps="${{ inputs.allow_version_bumps }}"
           input="${{ github.event.pull_request.title }}"
-          
           bump_regex="^npm\(deps-dev\): bump .*|^npm\(deps\): bump .*|^Bump .*|^maven \(deps\): bump .*|^maven \(deps-dev\): bump .*"
 
           if [[ $input =~ .*${prefix}.* ]]
@@ -33,7 +26,7 @@ jobs:
             exit 0
           fi
 
-          if [[ ${ allow_version_bumps } && $input =~ $bump_regex ]]
+          if [[ $input =~ $bump_regex ]]
           then
             echo "Valid"
             exit 0
@@ -65,13 +58,13 @@ jobs:
               return 0
             fi
           
-            if [[ ${ allow_version_bumps } && $branch_name =~ ^dependabot\/.* ]]
+            if [[ $branch_name =~ ^dependabot\/.* ]]
             then
               return 0
             fi
 
             echo "Branch name $branch_name is not allowed."
-            echo "Make sure, branch name follows pattern '${ inputs.jira_alias }-{TICKET_NUMBER}/{TICKET_TITLE}'"
+            echo "Make sure, branch name follows pattern '${{ inputs.jira_alias }}-{TICKET_NUMBER}/{TICKET_TITLE}'"
             return 1
           }
 
