@@ -62,6 +62,11 @@ jobs:
             then
               return 0
             fi
+          
+            if [[ $branch_name =~ ^hotfix\/.* ]]
+            then
+              return 0
+            fi
 
             echo "Branch name $branch_name is not allowed."
             echo "Make sure, branch name follows pattern '${{ inputs.jira_alias }}-{TICKET_NUMBER}/{TICKET_TITLE}'"
