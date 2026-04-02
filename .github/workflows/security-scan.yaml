@@ -37,7 +37,7 @@ jobs:
       # https://github.com/Checkmarx/ast-github-action
       # See for additional_params https://checkmarx.com/resource/documents/en/34965-68643-scan.html
       - name: Checkmarx One CLI Action
-        uses: checkmarx/ast-github-action@2.0.18
+        uses: checkmarx/ast-github-action@2.3.33
         with:
           base_uri: ${{ inputs.cx_base_uri }}
           cx_tenant: ${{ inputs.cx_tenant }}
