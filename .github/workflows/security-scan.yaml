@@ -30,6 +30,11 @@ on:
         default: ""
         required: false
         type: string
+      cx_extra_filters:
+        description: Additional comma-separated exclusion patterns appended to the default scan filters, e.g. '!test/**,!examples/**'. Applied to SAST, IaC and SCA alike.
+        default: ""
+        required: false
+        type: string
       cx_tags:
         description: List of tags associated to scans
         required: false
@@ -91,6 +96,10 @@ jobs:
           esac
 
           DEFAULT_FILTER="!tools/**,!docs/**,!**/src/test/**/*"
+          if [ "${CX_EXTRA_FILTERS_INPUT}" != "" ]; then
+            echo "[UTB] Appending caller filters: ${CX_EXTRA_FILTERS_INPUT}"
+            DEFAULT_FILTER="${DEFAULT_FILTER},${CX_EXTRA_FILTERS_INPUT}"
+          fi
           CX_FILTERS="--sast-filter '${DEFAULT_FILTER}' --iac-security-filter '${DEFAULT_FILTER}' --sca-filter '${DEFAULT_FILTER}'"
 
           if [ "${{ inputs.cx_scan_timeout }}" != "" ]; then
@@ -107,6 +116,7 @@ jobs:
           echo "scan_params=$SCAN_PARAMS" >> "$GITHUB_OUTPUT"
         env:
           CX_TAGS_INPUT: ${{ inputs.cx_tags }}
+          CX_EXTRA_FILTERS_INPUT: ${{ inputs.cx_extra_filters }}
 
       # https://github.com/Checkmarx/ast-github-action
       # See for additional_params https://checkmarx.com/resource/documents/en/34965-68643-scan.html
@@ -117,6 +127,6 @@ jobs:
         with:
           base_uri: ${{ inputs.cx_base_uri }}
           cx_tenant: ${{ inputs.cx_tenant }}
-          cx_client_id: ${{ secrets.CX_CONN_EXT_CLIENT_ID }}
-          cx_client_secret: ${{ secrets.CX_CONN_EXT_CLIENT_SECRET }}
+          cx_client_id: ${{ secrets.CX_CLIENT_ID }}
+          cx_client_secret: ${{ secrets.CX_CLIENT_SECRET }}
           additional_params: "${{ steps.init.outputs.scan_params }}"
