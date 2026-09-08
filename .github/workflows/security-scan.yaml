@@ -43,6 +43,6 @@ jobs:
         with:
           base_uri: ${{ inputs.cx_base_uri }}
           cx_tenant: ${{ inputs.cx_tenant }}
-          cx_client_id: ${{ secrets.CX_CLIENT_ID }}
-          cx_client_secret: ${{ secrets.CX_CLIENT_SECRET }}
+          cx_client_id: ${{ secrets.CX_CONN_EXT_CLIENT_ID }}
+          cx_client_secret: ${{ secrets.CX_CONN_EXT_CLIENT_SECRET }}
           additional_params: --sast-filter '!tools/**/*,!docs/**/*,!**/src/test/**/*' --iac-security-filter '!tools/**/*,!docs/**/*,!**/src/test/**/*' --sca-filter '!tools/**/*,!docs/**/*,!**/src/test/**/*' --tags '${{ inputs.cx_tags }}'
