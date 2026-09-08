@@ -15,6 +15,21 @@ on:
       cx_tenant:
         default: unzer
         type: string
+      cx_scan_timeout:
+        description: Checkmarx Scan timeout. The scan fails after this time in minutes.
+        default: "10"
+        required: false
+        type: string
+      cx_scan_profile:
+        description: Checkmarx Scan Profile to select the scanners to apply. Possible values are 'mobile-app', 'library', 'service', 'infra'. Input is ignored for any other value.
+        default: ""
+        required: false
+        type: string
+      cx_threshold_preset:
+        description: Thresholds for Checkmarx scan. Possible values are 'strict', 'relaxed' if a threshold should be set. Input is ignored for any other value.
+        default: ""
+        required: false
+        type: string
       cx_tags:
         description: List of tags associated to scans
         required: false
@@ -32,7 +47,66 @@ jobs:
     runs-on:  ${{ inputs.build_runner_label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Checkmarx parameters
+        id: init
+        run: |
+          echo "[UTB] Setup Checkmarx parameters"
+
+          case "${{ inputs.cx_threshold_preset }}" in
+            "strict")
+              echo "[UTB] Strict threshold preset selected..."
+              CX_THRESHOLD="--threshold 'sast-critical=1; sast-high=3'"
+              ;;
+            "relaxed")
+              echo "[UTB] Relaxed threshold preset selected"
+              CX_THRESHOLD="--threshold 'sast-critical=10; sast-high=10'"
+              ;;
+            *)
+              echo "[UTB] No threshold preset selected"
+              ;;
+          esac
+
+          case "${{ inputs.cx_scan_profile }}" in
+            "infra")
+              echo "[UTB] Infra scan profile selected"
+              CX_SCAN_TYPES="--scan-types 'sca,sast,iac-security,container-security'"
+              ;;
+            "library")
+              echo "[UTB] Library scan profile selected"
+              CX_SCAN_TYPES="--scan-types 'sca,sast'"
+              ;;
+            "mobile-app")
+              echo "[UTB] Mobile App scan profile selected"
+              CX_SCAN_TYPES="--scan-types 'sca,sast'"
+              ;;
+            "service")
+              echo "[UTB] Service scan profile selected"
+              CX_SCAN_TYPES="--scan-types 'sca,sast,iac-security'"
+              ;;
+            *)
+              echo "[UTB] No scan profile selected"
+              ;;
+          esac
+
+          DEFAULT_FILTER="!tools/**,!docs/**,!**/src/test/**/*"
+          CX_FILTERS="--sast-filter '${DEFAULT_FILTER}' --iac-security-filter '${DEFAULT_FILTER}' --sca-filter '${DEFAULT_FILTER}'"
+
+          if [ "${{ inputs.cx_scan_timeout }}" != "" ]; then
+            CX_TIMEOUT="--scan-timeout ${{ inputs.cx_scan_timeout }}"
+          fi
+
+          if [ "${CX_TAGS_INPUT}" != "" ]; then
+            CX_TAGS_INPUT_WITHOUT_QUOTES=$(echo "${CX_TAGS_INPUT}" | sed "s/[\"']//g")
+            CX_TAGS="--tags '${CX_TAGS_INPUT_WITHOUT_QUOTES}'"
+          fi
+
+          SCAN_PARAMS="${CX_THRESHOLD} ${CX_SCAN_TYPES} ${CX_FILTERS} ${CX_TIMEOUT} ${CX_TAGS}"
+          echo "scan_params=$SCAN_PARAMS"
+          echo "scan_params=$SCAN_PARAMS" >> "$GITHUB_OUTPUT"
+        env:
+          CX_TAGS_INPUT: ${{ inputs.cx_tags }}
 
       # https://github.com/Checkmarx/ast-github-action
       # See for additional_params https://checkmarx.com/resource/documents/en/34965-68643-scan.html
@@ -45,4 +119,4 @@ jobs:
           cx_tenant: ${{ inputs.cx_tenant }}
           cx_client_id: ${{ secrets.CX_CONN_EXT_CLIENT_ID }}
           cx_client_secret: ${{ secrets.CX_CONN_EXT_CLIENT_SECRET }}
-          additional_params: --sast-filter '!tools/**/*,!docs/**/*,!**/src/test/**/*' --iac-security-filter '!tools/**/*,!docs/**/*,!**/src/test/**/*' --sca-filter '!tools/**/*,!docs/**/*,!**/src/test/**/*' --tags '${{ inputs.cx_tags }}'
+          additional_params: "${{ steps.init.outputs.scan_params }}"
