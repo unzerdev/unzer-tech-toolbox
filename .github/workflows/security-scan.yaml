@@ -37,7 +37,9 @@ jobs:
       # https://github.com/Checkmarx/ast-github-action
       # See for additional_params https://checkmarx.com/resource/documents/en/34965-68643-scan.html
       - name: Checkmarx One CLI Action
-        uses: checkmarx/ast-github-action@2.3.33
+        # Pinned to a commit SHA: upstream prunes old tags, and a deleted tag
+        # breaks every consumer of this workflow (2.3.33 vanished in Aug 2026).
+        uses: checkmarx/ast-github-action@7b6a5cee621f92e6819d366dd48c9431314ac600 # 2.3.42
         with:
           base_uri: ${{ inputs.cx_base_uri }}
           cx_tenant: ${{ inputs.cx_tenant }}
